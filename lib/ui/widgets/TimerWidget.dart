@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 
 class TimerWidget extends StatefulWidget {
   @override
@@ -53,12 +54,15 @@ class _TimerWidgetState extends State<TimerWidget> {
     });
 
     timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_elapsedTime.inSeconds == 1) {
+        _startMusic();
+      }
       if (_elapsedTime.inSeconds == 0) {
         setState(() {
           _isGettingReady = false;
           _isRunning = true;
         });
-        _startMusic();
+        // _startMusic();
       }
       if (_isGettingReady) {
         _playTick();
@@ -73,7 +77,7 @@ class _TimerWidgetState extends State<TimerWidget> {
     });
   }
 
-  void _stopRun() {
+  void _stopRun() async {
     setState(() {
       _isRunning = false;
       _hasStarted = false;
@@ -81,6 +85,13 @@ class _TimerWidgetState extends State<TimerWidget> {
     });
     timer?.cancel();
     _stopMusic();
+    await addTime(_elapsedTime.inSeconds);
+  }
+
+  Future<void> addTime(int seconds) async {
+    final box = await Hive.openBox('Times');
+    final key = DateTime.now().toString();
+    await box.put(key, seconds);
   }
 
   Timer? timer;
